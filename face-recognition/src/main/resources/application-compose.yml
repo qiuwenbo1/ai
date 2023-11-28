@@ -5,11 +5,12 @@ spring:
     nacos:
       discovery:
         server-addr: nacos-server:8848
-  redis:
-    host: redis-server
-    password: PsOsGgN0rfXfIPbz
   rabbitmq:
     host: rabbit-server # RabbitMQ 服务的地址
+  data:
+    redis:
+      host: redis-server
+      password: PsOsGgN0rfXfIPbz
 mysql:
   default:
     url: jdbc:mysql://mysql-server:3306/ai_cloud_x?useUnicode=true&characterEncoding=UTF-8&useSSL=true&autoReconnect=true

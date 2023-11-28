@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.qwb.ai.common.pojo.BaseStatus;
+import org.qwb.ai.common.utils.SnowflakeId;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -35,7 +36,7 @@ public class AbstractBaseEntity implements Serializable  {
 
     @Id
     @GeneratedValue(generator = "snowFlakeId")
-    @GenericGenerator(name = "snowFlakeId", strategy = "org.qwb.ai.common.utils.SnowflakeId")
+    @GenericGenerator(name = "snowFlakeId", type = SnowflakeId.class)
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
