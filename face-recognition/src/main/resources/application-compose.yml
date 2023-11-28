@@ -1,0 +1,32 @@
+router:
+  name: ''
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos-server:8848
+  redis:
+    host: redis-server
+    password: PsOsGgN0rfXfIPbz
+  rabbitmq:
+    host: rabbit-server # RabbitMQ 服务的地址
+mysql:
+  default:
+    url: jdbc:mysql://mysql-server:3306/ai_cloud_x?useUnicode=true&characterEncoding=UTF-8&useSSL=true&autoReconnect=true
+    password: PsOsGgN0rfXfIPbz
+  tenant:
+    host: mysql-server
+    password: PsOsGgN0rfXfIPbz
+app:
+  face:
+    appId: DRBkPCTx3XYRsQ6Xbnco7a26qsC1cEuAwkce1GjQMeBy
+    sdkKey: HN3xaUJsW8it39veXuNazhMhMcsfjwgpHYcEmUPLbQAQ
+    activeFile: /LINUX64/82E111E8L114HBPG.dat
+    detectPoolSize: 10
+    comparePoolSize: 10
+  insight:
+    baseUri: http://192.168.50.239:18081 #GPU
+milvus:
+  host: milvus-server
+  port: 19530
+  collection: face_sim
