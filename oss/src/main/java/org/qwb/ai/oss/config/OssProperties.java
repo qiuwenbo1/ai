@@ -1,13 +1,6 @@
-/*
- * @Author: liu lichao
- * @Date: 2021-01-04 18:48:19
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-12-22 09:37:18
- * @Description: file content
- */
 package org.qwb.ai.oss.config;
 
-import org.irm.ai.common.utils.Kv;
+import org.qwb.ai.common.utils.Kv;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import lombok.Data;
@@ -58,7 +51,7 @@ public class OssProperties {
 	/**
 	 * 默认的存储桶名称
 	 */
-	private String bucketName = "kunify-cloud";
+	private String bucketName = "ai-cloud-001";
 
 	/**
 	 * 自定义属性

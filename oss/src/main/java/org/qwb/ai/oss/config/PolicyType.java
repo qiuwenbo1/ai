@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2021-01-04 19:13:04
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-12-22 09:37:37
- * @Description: file content
- */
 package org.qwb.ai.oss.config;
 
 import lombok.AllArgsConstructor;
