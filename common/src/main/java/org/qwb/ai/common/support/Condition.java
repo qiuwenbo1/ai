@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2020-11-18 23:56:42
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-12-17 15:22:57
- * @Description: 前端传入参数的条件查询
- */
 package org.qwb.ai.common.support;
 
 import java.lang.reflect.Field;

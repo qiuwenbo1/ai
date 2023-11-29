@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2021-06-30 02:37:06
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-06-30 02:50:29
- * @Description: file content
- */
 package org.qwb.ai.common.utils;
 
 import java.io.FileInputStream;

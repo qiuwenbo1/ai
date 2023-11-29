@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2021-03-22 09:39:19
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-03-22 09:39:42
- * @Description: file content
- */
 package org.qwb.ai.faceRecognition.utils;
 
 import java.io.ByteArrayInputStream;

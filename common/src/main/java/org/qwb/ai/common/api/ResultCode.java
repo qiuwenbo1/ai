@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2020-11-12 15:58:58
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-12-17 10:35:22
- * @Description: 常用API操作码
- */
 package org.qwb.ai.common.api;
 
 public enum ResultCode implements IErrorCode {

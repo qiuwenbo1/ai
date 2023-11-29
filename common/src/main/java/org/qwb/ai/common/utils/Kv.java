@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2020-11-15 22:00:18
- * @LastEditors: liu lichao
- * @LastEditTime: 2020-11-17 18:03:13
- * @Description: 链式map创建工具
- */
 package org.qwb.ai.common.utils;
 
 import java.sql.Date;

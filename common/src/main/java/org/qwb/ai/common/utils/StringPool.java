@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2020-11-16 22:51:54
- * @LastEditors: liu lichao
- * @LastEditTime: 2020-11-17 17:31:54
- * @Description: 静态Str池
- */
 package org.qwb.ai.common.utils;
 /**
  * 静态Str池

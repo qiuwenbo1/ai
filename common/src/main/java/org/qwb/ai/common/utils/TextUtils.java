@@ -1,10 +1,3 @@
-/*
- * @Author: liu lichao
- * @Date: 2021-01-25 06:46:12
- * @LastEditors: liu lichao
- * @LastEditTime: 2021-01-27 09:48:07
- * @Description: file content
- */
 package org.qwb.ai.common.utils;
 
 import java.util.ArrayList;
