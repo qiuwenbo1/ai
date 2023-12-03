@@ -88,7 +88,7 @@ public class InsightFaceServiceImpl implements FaceService {
     @Value("${milvus.collection}")
     private String collection;
 
-    @PostConstruct
+//    @PostConstruct
     public void init() {
         try {
 //初始化特征比较线程池
@@ -107,13 +107,70 @@ public class InsightFaceServiceImpl implements FaceService {
             faceEngineComparePool = new GenericObjectPool<InsightCompareEngine>(new InsightEngineFactory(), comparePoolConfig);//底层库算法对象池
             compareExecutorService = Executors.newFixedThreadPool(comparePoolSize);
             logger.info("初始化Insight人脸比对线程池成功");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error(e.getMessage());
         }
 
     }
 
+    /**
+     * 初始化人脸特征库到redis
+     */
+    @Override
+    public void initFaceRepo() {
+        Map<Object, Object> objs = redisUtil.hmget(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY);
+        Set<String> faceIdSet = Convert.toSet(String.class, new ArrayList<>(objs.keySet()));
+        logger.info("初始化Insight Face人脸特征库");
+        List<FaceImage> faceImages = faceImageRepository.findAll().stream().filter(m -> !faceIdSet.contains(String.valueOf(m.getId()))).toList();
+
+        Map<String, Object> faceFeatureMap = new HashMap<>();
+
+        try (ProgressBar pb = new ProgressBar("处理人脸图像特征", faceImages.size())) {
+            List<List<Float>> vecList = new ArrayList<>();
+            List<Long> faceIds = new ArrayList<>();
+            for (FaceImage faceImage : faceImages) {
+                PersonImage image = personImageRepository.findById(faceImage.getImage()).orElse(null);
+                if (image == null) {
+                    continue;
+                }
+                BufferedImage bufferedImage;
+                try (InputStream faceImageIns = Objects.requireNonNull(iOssEndPoint.getFileIns(faceImage.getImageFile()).body()).byteStream()) {
+                    bufferedImage = ImageIO.read(faceImageIns);
+                }
+                if (bufferedImage == null) {
+                    logger.error("minio不存在的图片：【{}】", faceImage.getImageFile());
+                    continue;
+                }
+                Image img = ImgUtil.scale(bufferedImage, 112, 112);
+                String data = ImgUtil.toBase64DataUri(img, ImgUtil.IMAGE_TYPE_JPEG);
+                JSONObject requestParams = getRequestParam();
+                requestParams.set("embed_only", true);
+                requestParams.set("extract_embedding", true);
+
+                // 数据
+                Map<String, Object> dataMap = new HashMap<>();
+                dataMap.put("data", List.of(data));
+                requestParams.set("images", dataMap);
+
+                String url = baseUri + "/extract";
+                String result = HttpUtil.post(url, requestParams.toString());
+
+                if (JSONUtil.isTypeJSON(result)) {
+                    List<Float> vec = JSONUtil.parseObj(result).getJSONArray("data").getJSONObject(0).getJSONArray("vec").toList(Float.class);
+                    FaceInfoDto faceInfoDto = new FaceInfoDto(faceImage.getId(), vec);
+                    faceFeatureMap.put(Convert.toStr(faceImage.getId()), faceInfoDto);
+                    vecList.add(vec);
+                    faceIds.add(faceImage.getId());
+                }
+                pb.step();
+            }
+            logger.info("Insight Face 初始化人脸库特征完毕，存储特征");
+            boolean status = redisUtil.hmset(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY, faceFeatureMap);
+            logger.info("人脸库特征存储redis状态：【{}】", status);
+        } catch (Exception e) {
+            logger.error("{}", e.getMessage());
+        }
+    }
 
 
     @Override
@@ -139,15 +196,14 @@ public class InsightFaceServiceImpl implements FaceService {
         String url = baseUri + "/extract";
         String result = HttpUtil.post(url, requestParams.toString());
 
-        if(JSONUtil.isJson(result)) {
+        if (JSONUtil.isJson(result)) {
             JSONObject resultObj = JSONUtil.parseObj(result);
             JSONArray faceData = resultObj.getJSONArray("data").getJSONObject(0).getJSONArray("faces");
-            for(int i = 0; i < faceData.size(); i++) {
+            for (int i = 0; i < faceData.size(); i++) {
                 JSONObject faceObj = faceData.getJSONObject(i);
                 FaceInfo faceInfo = new FaceInfo();
                 List<Integer> bbox = faceObj.getJSONArray("bbox").toList(Integer.class);
                 faceInfo.setRect(new Rect(bbox.get(0), bbox.get(1), bbox.get(2), bbox.get(3)));
-
                 faceInfos.add(faceInfo);
             }
 
@@ -155,36 +211,23 @@ public class InsightFaceServiceImpl implements FaceService {
         return faceInfos;
     }
 
-    @Override
-    public List<FaceInfo> detect(InputStream ins, String imgType) {
-        return null;
-    }
 
-    @Override
-    public List<FaceInfo> detect(ImageInfo imageInfo) {
-        return null;
-    }
-
-    @Override
-    public byte[] extractFaceFeature(ImageInfo imageInfo, FaceInfo faceInfo) {
-        return new byte[0];
-    }
 
     @Override
     public List<Float> extractFaceFeature(InputStream ins, FaceInfo faceInfo) {
         // 裁剪人脸图片
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(37628);
-        FaceRectangle rec =  RectUtils.convertArcFace(faceInfo.getRect());
+        ByteArrayOutputStream os = new ByteArrayOutputStream(37628);
+        FaceRectangle rec = RectUtils.convertArcFace(faceInfo.getRect());
         long cutStart = DateUtil.current();
         ImgUtil.cut(
                 ins,
-                baos,
+                os,
                 new Rectangle(rec.getX(), rec.getY(), rec.getW(), rec.getH())
         );
         logger.info("裁剪耗时：{}s", (DateUtil.current() - cutStart) / 1000.0);
         long base64Start = DateUtil.current();
-        InputStream stream2 = new ByteArrayInputStream(baos.toByteArray());
-        Image img = ImgUtil.scale(ImgUtil.toImage(IoUtil.readBytes(stream2)),112,112);
+        InputStream stream2 = new ByteArrayInputStream(os.toByteArray());
+        Image img = ImgUtil.scale(ImgUtil.toImage(IoUtil.readBytes(stream2)), 112, 112);
         String data = ImgUtil.toBase64DataUri(img, ImgUtil.IMAGE_TYPE_JPEG);
         logger.info("转base64：{}s", (DateUtil.current() - base64Start) / 1000.0);
         JSONObject requestParams = getRequestParam();
@@ -201,96 +244,39 @@ public class InsightFaceServiceImpl implements FaceService {
         String result = HttpUtil.post(url, requestParams.toString());
         logger.info("调用耗时：{}s", (DateUtil.current() - timeStart) / 1000.0);
 
-        if(JSONUtil.isJson(result)) {
+        if (JSONUtil.isTypeJSON(result)) {
             return JSONUtil.parseObj(result).getJSONArray("data").getJSONObject(0).getJSONArray("vec").toList(Float.class);
         }
         return null;
     }
 
-    @Override
-    public void initFaceRepo() {
-        Map<Object, Object> objs = redisUtil.hmget(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY);
-        Set<String> faceIdSet = Convert.toSet(String.class, new ArrayList<>(objs.keySet()));
-        logger.info("初始化Insight Face人脸特征库");
-        List<FaceImage> faceImages = faceImageRepository.findAll().stream().filter(m-> !faceIdSet.contains(String.valueOf(m.getId()))).collect(Collectors.toList());
-
-        Map<String, Object> faceFeatureMap = new HashMap<>();
-
-        try (ProgressBar pb = new ProgressBar("处理人脸图像特征", faceImages.size())){
-            List<List<Float>> vecList = new ArrayList<>();
-            List<Long> faceIds = new ArrayList<>();
-            for(FaceImage faceImage: faceImages) {
-                PersonImage image = personImageRepository.findById(faceImage.getImage()).orElse(null);
-                if(image == null) {
-                    continue;
-                }
-                InputStream faceImageIns = iOssEndPoint.getFileIns(faceImage.getImageFile()).body().asInputStream();
-                BufferedImage bufferedImage = ImageIO.read(faceImageIns);
-                if (bufferedImage == null){
-                    logger.error("minio不存在的图片：【{}】",faceImage.getImageFile());
-                    continue;
-                }
-                Image img = ImgUtil.scale(bufferedImage,112,112);
-                String data = ImgUtil.toBase64DataUri(img, ImgUtil.IMAGE_TYPE_JPEG);
-                JSONObject requestParams = getRequestParam();
-                requestParams.set("embed_only", true);
-                requestParams.set("extract_embedding", true);
-
-                // 数据
-                Map<String, Object> dataMap = new HashMap<>();
-                dataMap.put("data", List.of(data));
-                requestParams.set("images", dataMap);
-
-                String url = baseUri + "/extract";
-                String result = HttpUtil.post(url, requestParams.toString());
-
-                if(JSONUtil.isJson(result)) {
-                    List<Float> vec = JSONUtil.parseObj(result).getJSONArray("data").getJSONObject(0).getJSONArray("vec").toList(Float.class);
-                    FaceInfoDto faceInfoDto = new FaceInfoDto(faceImage.getId(), vec);
-                    faceFeatureMap.put(Convert.toStr(faceImage.getId()), faceInfoDto);
-                    vecList.add(vec);
-                    faceIds.add(faceImage.getId());
-                }
-                pb.step();
-            }
-            if (faceIds.size() != 0){
-                List<InsertParam.Field> fields = new ArrayList<>();
-                fields.add(new InsertParam.Field("face_id", faceIds));
-                fields.add(new InsertParam.Field("face_embedding", vecList));
-                InsertParam insertParam = InsertParam.newBuilder()
-                        .withCollectionName(collection)
-                        .withPartitionName("ylj")
-                        .withFields(fields)
-                        .build();
-                milvusServiceClient.insert(insertParam);
-            }
-            logger.info("Insight Face 初始化人脸库特征完毕，存储特征");
-            boolean status = redisUtil.hmset(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY, faceFeatureMap);
-            System.out.println(status);
-            logger.info("存储Insight Face 人脸库特征完毕");
-
-        } catch (Exception e) {
-            logger.error("", e);
-        }
-    }
-
-    @Override
-    public List<FaceCompareDto> faceRecognition(byte[] faceFeature, float passRate) {
-        return null;
-    }
-
+    /**
+     * 人脸识别
+     *
+     * @param faceFeature 人脸特征
+     * @param passRate    通过率
+     * @return 相似的人脸
+     */
     @Override
     public List<FaceCompareDto> faceRecognition(List<Float> faceFeature, float passRate) {
         Map<Object, Object> objs = redisUtil.hmget(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY);
 
-        List<FaceInfoDto> faceInfoDtos = Convert.toList(FaceInfoDto.class, new ArrayList<>(objs.values()));
-        return compareDtoList(faceInfoDtos,passRate,faceFeature);
+        List<FaceInfoDto> faceInfos = Convert.toList(FaceInfoDto.class, new ArrayList<>(objs.values()));
+        return compareDtoList(faceInfos, passRate, faceFeature);
     }
 
-    private List<FaceCompareDto> compareDtoList(List<FaceInfoDto> faceInfoDtos, float passRate, List<Float> faceFeature){
+    /**
+     * redis 进行比较人脸
+     *
+     * @param faceInfos   redis存储的人脸特征
+     * @param passRate    通过率
+     * @param faceFeature 要校验的人脸
+     * @return 最相似的人脸
+     */
+    private List<FaceCompareDto> compareDtoList(List<FaceInfoDto> faceInfos, float passRate, List<Float> faceFeature) {
         List<FaceCompareDto> result = Lists.newLinkedList();//识别到的人脸列表
         // 1000个人脸一组
-        List<List<FaceInfoDto>> faceInfoPartList = Lists.partition(faceInfoDtos, 100);
+        List<List<FaceInfoDto>> faceInfoPartList = Lists.partition(faceInfos, 100);
         CompletionService<List<FaceCompareDto>> completionService = new ExecutorCompletionService<>(compareExecutorService);
         for (List<FaceInfoDto> part : faceInfoPartList) {
             completionService.submit(new CompareFaceTask(part, faceFeature, passRate));
@@ -300,9 +286,9 @@ public class InsightFaceServiceImpl implements FaceService {
             try {
                 FaceCompareDtoList = completionService.take().get();
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
-            if (CollectionUtil.isNotEmpty(faceInfoDtos)) {
+            if (CollectionUtil.isNotEmpty(faceInfos)) {
                 assert FaceCompareDtoList != null;
                 result.addAll(FaceCompareDtoList);
             }
@@ -311,36 +297,42 @@ public class InsightFaceServiceImpl implements FaceService {
         return result;
     }
 
-    public List<FaceCompareDto> faceRecognitions(List<Float> faceFeature, float passRate){
-        Map<Object, Object> objs = redisUtil.hmget(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY);
-        SearchParam searchParam = SearchParam.newBuilder()
-                .withCollectionName(collection)
-                .withPartitionNames(List.of("ylj"))
-                .withMetricType(MetricType.L2)
-                .withOutFields(List.of("face_id"))
-                .withTopK(10)
-                .withVectors(List.of(faceFeature))
-                .withVectorFieldName("face_embedding")
-//                .withParams(SEARCH_PARAM)
-                .build();
-        io.milvus.param.R<SearchResults> respSearch = milvusServiceClient.search(searchParam);
-        SearchResultsWrapper wrapperSearch = new SearchResultsWrapper(respSearch.getData().getResults());
-        List<SearchResultsWrapper.IDScore> idScores = wrapperSearch.getIDScore(0);
-        List<?> imageIds = wrapperSearch.getFieldData("face_id", 0);
-        List<Object> faceInfoDto = new ArrayList<>();
-        for (int i = 0; i < idScores.size(); i++) {
-            Long faceId = Convert.toLong(imageIds.get(i));
-            Object o = objs.get(faceId.toString());
-            faceInfoDto.add(o);
-//            FaceImage faceImage = faceImageRepository.findById(faceId).orElse(null);
-//            assert faceImage != null;
-//            Person person = personRepository.findById(faceImage.getPerson()).orElse(null);
-//            assert person != null;
-//            logger.info("人物：【{}】，相似度：【{}】",person.getName(),score);
-        }
-        List<FaceInfoDto> faceInfoDtos = Convert.toList(FaceInfoDto.class, new ArrayList<>(faceInfoDto));
-        return compareDtoList(faceInfoDtos,passRate,faceFeature);
-    }
+//    /**
+//     * milvus 进行校验检索人脸
+//     * @param faceFeature
+//     * @param passRate
+//     * @return
+//     */
+//    public List<FaceCompareDto> faceRecognitions(List<Float> faceFeature, float passRate){
+//        Map<Object, Object> objs = redisUtil.hmget(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY);
+//        SearchParam searchParam = SearchParam.newBuilder()
+//                .withCollectionName(collection)
+//                .withPartitionNames(List.of("ylj"))
+//                .withMetricType(MetricType.L2)
+//                .withOutFields(List.of("face_id"))
+//                .withTopK(10)
+//                .withVectors(List.of(faceFeature))
+//                .withVectorFieldName("face_embedding")
+////                .withParams(SEARCH_PARAM)
+//                .build();
+//        io.milvus.param.R<SearchResults> respSearch = milvusServiceClient.search(searchParam);
+//        SearchResultsWrapper wrapperSearch = new SearchResultsWrapper(respSearch.getData().getResults());
+//        List<SearchResultsWrapper.IDScore> idScores = wrapperSearch.getIDScore(0);
+//        List<?> imageIds = wrapperSearch.getFieldData("face_id", 0);
+//        List<Object> faceInfoDto = new ArrayList<>();
+//        for (int i = 0; i < idScores.size(); i++) {
+//            Long faceId = Convert.toLong(imageIds.get(i));
+//            Object o = objs.get(faceId.toString());
+//            faceInfoDto.add(o);
+////            FaceImage faceImage = faceImageRepository.findById(faceId).orElse(null);
+////            assert faceImage != null;
+////            Person person = personRepository.findById(faceImage.getPerson()).orElse(null);
+////            assert person != null;
+////            logger.info("人物：【{}】，相似度：【{}】",person.getName(),score);
+//        }
+//        List<FaceInfoDto> faceInfoDtos = Convert.toList(FaceInfoDto.class, new ArrayList<>(faceInfoDto));
+//        return compareDtoList(faceInfoDtos,passRate,faceFeature);
+//    }
 
     @Override
     public List<FaceCompareDto> faceRecognition(InputStream ins, float passRate) {
@@ -405,5 +397,30 @@ public class InsightFaceServiceImpl implements FaceService {
         requestParams.set("api_ver", "2");
         requestParams.set("msgpack", false);
         return requestParams;
+    }
+
+    @Override
+    public List<FaceCompareDto> faceRecognitions(List<Float> faceFeature, float passRate) {
+        return null;
+    }
+
+    @Override
+    public List<FaceInfo> detect(InputStream ins, String imgType) {
+        return null;
+    }
+
+    @Override
+    public List<FaceInfo> detect(ImageInfo imageInfo) {
+        return null;
+    }
+
+    @Override
+    public byte[] extractFaceFeature(ImageInfo imageInfo, FaceInfo faceInfo) {
+        return new byte[0];
+    }
+
+    @Override
+    public List<FaceCompareDto> faceRecognition(byte[] faceFeature, float passRate) {
+        return null;
     }
 }

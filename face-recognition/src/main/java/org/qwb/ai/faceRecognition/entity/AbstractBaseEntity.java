@@ -24,7 +24,7 @@ import lombok.Setter;
 @MappedSuperclass
 @Getter
 @Setter
-@EntityListeners(AuditingEntityListener.class)
+//@EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor
 public class AbstractBaseEntity implements Serializable  {
 
