@@ -2,12 +2,12 @@ server:
   port: 8887
 spring:
   datasource:
-    url: jdbc:mysql://192.168.1.3:23306/ai_cloud_x?useUnicode=true&characterEncoding=UTF-8&useSSL=true&autoReconnect=true
+    url: jdbc:mysql://192.168.1.3:23306/ai_oss?useUnicode=true&characterEncoding=UTF-8&useSSL=true&autoReconnect=true
     username: root
     password: PsOsGgN0rfXfIPbz
     driverClassName: com.mysql.cj.jdbc.Driver
   application:
-    name: ai-resource
+    name: ai-oss
   servlet:
     multipart:
       max-request-size: 2000MB
