@@ -12,6 +12,7 @@
     <artifactId>common</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>common</name>
+    <packaging>jar</packaging>
     <description>common</description>
     <properties>
         <java.version>21</java.version>
@@ -48,7 +49,7 @@
             <version>3.1.0</version>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <version>6.1.7.Final</version>
         </dependency>
@@ -57,27 +58,10 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.16.0</version>
         </dependency>
-
-
-
-
-
-
-
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

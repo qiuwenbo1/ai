@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -26,7 +27,7 @@ public class NetWorkFileUtil {
         File file = null;
         FileOutputStream fout = null;
         try {
-            url = new URL(imageUrl);
+            url = new URI(imageUrl).toURL();
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.connect();
             inputStream = urlConnection.getInputStream();
