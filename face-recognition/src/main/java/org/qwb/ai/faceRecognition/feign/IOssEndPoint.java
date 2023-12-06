@@ -4,6 +4,7 @@ import cn.hutool.json.JSONObject;
 import okhttp3.Response;
 import org.qwb.ai.common.api.R;
 import org.qwb.ai.common.constant.AppConstant;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.service.annotation.GetExchange;
-import org.springframework.web.service.annotation.HttpExchange;
 
 import java.io.InputStream;
 
@@ -21,14 +20,17 @@ import java.io.InputStream;
  * @author demoQ
  * @date 2021/12/9 10:06
  */
-@HttpExchange("/server")
+@FeignClient(
+        name = AppConstant.APPLICATION_AUTH_NAME + "${router.name}",
+        contextId = "IOssEndPoint"
+)
 public interface IOssEndPoint {
 
     String path = "/oss/endpoint";
     @PostMapping(value = path + "/make-bucket")
     R makeBucket(@RequestParam String bucketName);
 
-    @GetExchange(value = path + "/stat-file")
+    @GetMapping(value = path + "/stat-file")
     R<JSONObject> statFile(@RequestParam String fileName);
 
     @GetMapping(value = path + "/stat-file-json")

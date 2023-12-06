@@ -1,25 +1,26 @@
 package org.qwb.ai.faceRecognition.entity;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
 
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.qwb.ai.common.pojo.BaseStatus;
-import org.qwb.ai.common.utils.SnowflakeId;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 @MappedSuperclass
 @Getter
@@ -28,15 +29,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class AbstractBaseEntity implements Serializable  {
 
-    /**
-     *
-     */
-    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(generator = "snowFlakeId")
-    @GenericGenerator(name = "snowFlakeId", type = SnowflakeId.class)
+    @GenericGenerator(name = "snowFlakeId", strategy = "org.qwb.ai.common.utils.SnowflakeId")
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 

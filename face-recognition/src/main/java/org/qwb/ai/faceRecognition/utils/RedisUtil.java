@@ -5,11 +5,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import cn.hutool.core.collection.CollUtil;
+
+import javax.annotation.Resource;
 
 @Component
 public class RedisUtil {

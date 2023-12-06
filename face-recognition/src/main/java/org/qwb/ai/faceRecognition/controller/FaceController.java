@@ -7,7 +7,6 @@ import cn.hutool.core.io.IoUtil;
 import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.toolkit.ImageInfo;
 import com.google.common.collect.Lists;
-import jakarta.annotation.Resource;
 import org.qwb.ai.common.api.R;
 import org.qwb.ai.faceRecognition.dto.FaceCompareDto;
 import org.qwb.ai.faceRecognition.entity.FaceImage;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;

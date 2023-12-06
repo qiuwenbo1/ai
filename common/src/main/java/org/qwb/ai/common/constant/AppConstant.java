@@ -10,7 +10,7 @@ public interface AppConstant {
 	/**
 	 * 基础包
 	 */
-	String BASE_PACKAGES = "org.irm.ai";
+	String BASE_PACKAGES = "org.qwb.ai";
 
 	/**
 	 * 应用名前缀

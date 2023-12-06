@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.Set;
 
 
-import jakarta.persistence.EntityManager;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -16,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import cn.hutool.core.util.ObjectUtil;
+
+import javax.persistence.EntityManager;
 
 public class SimpleJpaRepositoryImpl<T, ID> extends SimpleJpaRepository<T, ID> {
 

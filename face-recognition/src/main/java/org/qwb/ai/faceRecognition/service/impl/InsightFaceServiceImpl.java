@@ -24,8 +24,6 @@ import io.milvus.param.MetricType;
 import io.milvus.param.dml.InsertParam;
 import io.milvus.param.dml.SearchParam;
 import io.milvus.response.SearchResultsWrapper;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import me.tongfei.progressbar.ProgressBar;
@@ -52,6 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -121,7 +120,7 @@ public class InsightFaceServiceImpl implements FaceService {
         Map<Object, Object> objs = redisUtil.hmget(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY);
         Set<String> faceIdSet = Convert.toSet(String.class, new ArrayList<>(objs.keySet()));
         logger.info("初始化Insight Face人脸特征库");
-        List<FaceImage> faceImages = faceImageRepository.findAll().stream().filter(m -> !faceIdSet.contains(String.valueOf(m.getId()))).toList();
+        List<FaceImage> faceImages = faceImageRepository.findAll().stream().filter(m -> !faceIdSet.contains(String.valueOf(m.getId()))).collect(Collectors.toList());
 
         Map<String, Object> faceFeatureMap = new HashMap<>();
 
