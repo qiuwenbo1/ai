@@ -1,0 +1,47 @@
+server:
+  port: 1000
+router:
+  name: ''
+spring:
+  application:
+    name: ai-gateway
+  data:
+    redis:
+      database: 4
+      port: 26378
+      host: 192.168.1.3
+      password: PsOsGgN0rfXfIPbz
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false #开启从注册中心动态创建路由的功能
+          lower-case-service-id: true #使用小写服务名，默认是大写
+    nacos:
+      discovery:
+        server-addr: 192.168.1.3:38848
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: 'http://localhost:1000/ai-auth/rsa/publicKey' #配置RSA的公钥访问地址
+  servlet:
+    multipart:
+      max-request-size: 2000MB
+      max-file-size: 2000MB
+secure:
+  ignore:
+    urls:
+      - '/ai-auth/oauth/token'
+      - '/ai-auth/oauth/token'
+      - '/ai-auth/oauth/captcha'
+      - '/ai-auth/rsa/publicKey'
+      - '/ai-user/user/login'
+      - '/ai-user/user/register'
+      - '/resource/oss/endpoint/download-file'
+      - '/ai-sensitive/user/login'
+      - '/ai-sensitive/license/updateLicense'
+      - '/ai-api/**'
+      - '/ai-sensitive/infer/file/download'
+      - '/ai-sensitive/user/tenantList'
+      # - '/kg/workbench/document/unit/export-text-units'
