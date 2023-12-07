@@ -3,7 +3,6 @@ package org.qwb.ai.oss.controller;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.json.JSONUtil;
-import jakarta.annotation.Resource;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.qwb.ai.common.api.R;
@@ -20,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import java.io.InputStream;
 
 @RestController

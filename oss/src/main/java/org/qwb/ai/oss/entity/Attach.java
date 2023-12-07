@@ -3,13 +3,14 @@ package org.qwb.ai.oss.entity;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 import org.qwb.ai.common.utils.SnowflakeId;
+
+import javax.persistence.*;
 
 @Data
 @Getter
@@ -21,7 +22,7 @@ public class Attach {
 
 	@Id
     @GeneratedValue(generator = "snowFlakeId")
-    @GenericGenerator(name = "snowFlakeId", type = SnowflakeId.class)
+    @GenericGenerator(name = "snowFlakeId", strategy = "org.qwb.ai.common.utils.SnowflakeId")
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
