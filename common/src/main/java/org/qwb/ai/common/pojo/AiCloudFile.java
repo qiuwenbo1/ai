@@ -1,6 +1,8 @@
-package org.qwb.ai.oss.config;
+package org.qwb.ai.common.pojo;
 
 import lombok.Data;
+
+import java.util.Date;
 
 @Data
 public class AiCloudFile {

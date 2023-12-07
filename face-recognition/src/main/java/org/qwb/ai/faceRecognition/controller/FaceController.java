@@ -4,13 +4,16 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.json.JSONObject;
 import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.toolkit.ImageInfo;
 import com.google.common.collect.Lists;
 import org.qwb.ai.common.api.R;
+import org.qwb.ai.common.pojo.AiCloudFile;
 import org.qwb.ai.faceRecognition.dto.FaceCompareDto;
 import org.qwb.ai.faceRecognition.entity.FaceImage;
 import org.qwb.ai.faceRecognition.entity.Person;
+import org.qwb.ai.faceRecognition.feign.IOssEndPoint;
 import org.qwb.ai.faceRecognition.repository.FaceImageRepository;
 import org.qwb.ai.faceRecognition.repository.PersonRepository;
 import org.qwb.ai.faceRecognition.service.FaceService;
@@ -19,10 +22,13 @@ import org.qwb.ai.faceRecognition.vo.FaceRecResultVO;
 import org.qwb.ai.faceRecognition.vo.FaceRecVO;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -44,6 +50,8 @@ public class FaceController {
     @Resource
     private PersonRepository personRepository;
     private final Logger logger = LoggerFactory.getLogger(FaceController.class);
+    @Resource
+    private IOssEndPoint iOssEndPoint;
 
     @RequestMapping(value = "/infer2")
     public R<FaceRecResultVO> infer(MultipartFile file) throws IOException {

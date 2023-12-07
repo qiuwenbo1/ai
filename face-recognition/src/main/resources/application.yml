@@ -1,7 +1,7 @@
 server:
   port: 8888
 router:
-  name: '-qwb'
+  name: ''
 milvus:
   host: 192.168.50.66
   port: 19530
@@ -38,11 +38,11 @@ spring:
       pageable:
         page-parameter: current
         one-indexed-parameters: true
-    redis:
-      database: 4
-      port: 26378
-      host: 192.168.1.3
-      password: PsOsGgN0rfXfIPbz
+  redis:
+    database: 4
+    port: 26378
+    host: 192.168.1.3
+    password: PsOsGgN0rfXfIPbz
 app:
   face:
     appId: DRBkPCTx3XYRsQ6Xbnco7a1ygTvqTPixdznsbxtxztz9
@@ -54,4 +54,14 @@ app:
     comparePoolSize: 10
   insight:
     baseUri: http://192.168.1.3:18081 #GPU
+# 设置ribbon超时时间
+ribbon:
+  ReadTimeout: 20000
+  ConnectTimeout: 20000
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 100000 #单位毫秒
+        readTimeout: 600000 #单位毫秒
 

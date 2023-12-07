@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FaceInfoDto {
+public class FaceInfoDto implements Serializable {
 
     public FaceInfoDto(Long id, byte[] faceFeature){
         this.id = id;

@@ -50,6 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -87,7 +88,8 @@ public class InsightFaceServiceImpl implements FaceService {
     @Value("${milvus.collection}")
     private String collection;
 
-//    @PostConstruct
+
+    @PostConstruct
     public void init() {
         try {
 //初始化特征比较线程池
@@ -112,6 +114,7 @@ public class InsightFaceServiceImpl implements FaceService {
 
     }
 
+    @PostConstruct
     /**
      * 初始化人脸特征库到redis
      */
@@ -133,7 +136,7 @@ public class InsightFaceServiceImpl implements FaceService {
                     continue;
                 }
                 BufferedImage bufferedImage;
-                try (InputStream faceImageIns = Objects.requireNonNull(iOssEndPoint.getFileIns(faceImage.getImageFile()).body()).byteStream()) {
+                try (InputStream faceImageIns = iOssEndPoint.getFileIns(faceImage.getImageFile()).body().asInputStream()) {
                     bufferedImage = ImageIO.read(faceImageIns);
                 }
                 if (bufferedImage == null) {

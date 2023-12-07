@@ -63,6 +63,7 @@ public class BaseMysqlConfig {
         ds.setTestWhileIdle(true);
         ds.setValidationQuery("select 1");
         ds.setValidationQueryTimeout(10);
+        ds.setTimeBetweenEvictionRunsMillis(3600000);
         ds.setMaxActive(20);
 
         return ds;

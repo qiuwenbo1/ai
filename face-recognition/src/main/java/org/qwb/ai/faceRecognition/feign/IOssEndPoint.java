@@ -1,17 +1,16 @@
 package org.qwb.ai.faceRecognition.feign;
 
 import cn.hutool.json.JSONObject;
-import okhttp3.Response;
+import feign.Response;
 import org.qwb.ai.common.api.R;
 import org.qwb.ai.common.constant.AppConstant;
+import org.qwb.ai.common.pojo.AiCloudFile;
+import org.qwb.ai.common.pojo.Attach;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -21,7 +20,7 @@ import java.io.InputStream;
  * @date 2021/12/9 10:06
  */
 @FeignClient(
-        name = AppConstant.APPLICATION_AUTH_NAME + "${router.name}",
+        name = AppConstant.APPLICATION_OSS + "${router.name}",
         contextId = "IOssEndPoint"
 )
 public interface IOssEndPoint {
@@ -40,13 +39,13 @@ public interface IOssEndPoint {
     R<String> fileLink(@RequestParam String fileName);
 
     @GetMapping(path + "/attach-by-id")
-    R<JSONObject> attachById(@RequestParam Long attachId);
+    R<Attach> attachById(@RequestParam Long attachId);
 
     @GetMapping(path + "/attach-by-id-with-tenant")
     R<JSONObject> attachByIdWithTenant(@RequestParam Long attachId, @RequestParam String tenantId);
 
-    @PostMapping(path + "/put-file")
-    R<JSONObject> putFile(@RequestParam MultipartFile file);
+    @PostMapping(value = path + "/put-file",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    R<AiCloudFile> putFile(@RequestPart MultipartFile file);
 
     @PostMapping(path + "/put-file-ins")
     R<JSONObject> putFileIns(@RequestParam String fileName, @RequestParam byte[] fileContent);
@@ -58,7 +57,7 @@ public interface IOssEndPoint {
     R<JSONObject> putFileAttach(@RequestPart MultipartFile file);
 
     @PostMapping(value = path + "/put-attach", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    R<JSONObject> putAttach(@RequestPart MultipartFile file);
+    R<Attach> putAttach(@RequestPart MultipartFile file);
 
     @PostMapping(value = path + "/put-attach-with-tenant", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     R<JSONObject> putAttachWithTenant(@RequestPart MultipartFile file, @RequestParam String tenantId);

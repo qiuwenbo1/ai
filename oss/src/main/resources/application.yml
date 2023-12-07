@@ -9,12 +9,6 @@ spring:
         preserved.heart.beat.interval: 1000 #心跳间隔。时间单位:毫秒。心跳间隔
         preserved.heart.beat.timeout: 3000 #心跳暂停。时间单位:毫秒。 即服务端6秒收不到客户端心跳，会将该客户端注册的实例设为不健康：
         preserved.ip.delete.timeout: 3000 #Ip删除超时。时间单位:毫秒。即服务端9秒收不到客户端心跳，会将该客户端注册的实例删除：
-
-  datasource:
-    url: jdbc:mysql://192.168.1.3:23306/ai_oss?useUnicode=true&characterEncoding=UTF-8&useSSL=true&autoReconnect=true
-    username: root
-    password: PsOsGgN0rfXfIPbz
-    driverClassName: com.mysql.cj.jdbc.Driver
   application:
     name: ai-oss
   servlet:
@@ -26,6 +20,14 @@ spring:
       pageable:
         page-parameter: current
         one-indexed-parameters: true
+mysql:
+  default:
+    url: jdbc:mysql://192.168.1.3:23305/ai_cloud_x?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&autoReconnect=true
+    username: root
+    password: PsOsGgN0rfXfIPbz
+    driverClassName: com.mysql.cj.jdbc.Driver
+    packages:
+      - org.qwb.ai.common.pojo
 oss:
   bucket-name: ai-cloud-001
   name: minio
@@ -42,5 +44,5 @@ feign:
   client:
     config:
       default:
-        connectTimeout: 10000 #单位毫秒
-        readTimeout: 60000 #单位毫秒
+        connectTimeout: 100000 #单位毫秒
+        readTimeout: 600000 #单位毫秒

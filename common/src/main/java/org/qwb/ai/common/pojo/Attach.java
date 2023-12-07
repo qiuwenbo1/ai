@@ -1,4 +1,4 @@
-package org.qwb.ai.oss.entity;
+package org.qwb.ai.common.pojo;
 
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

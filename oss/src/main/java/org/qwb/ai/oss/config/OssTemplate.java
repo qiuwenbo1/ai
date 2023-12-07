@@ -3,6 +3,7 @@ package org.qwb.ai.oss.config;
 import java.io.InputStream;
 import java.util.List;
 
+import org.qwb.ai.common.pojo.AiCloudFile;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface OssTemplate {

@@ -43,7 +43,7 @@ public interface AuthConstant {
 
     String SYS_URL_PATTERN = "/" + AppConstant.APPLICATION_SYSTEM_NAME + "/**";
     String USER_URL_PATTERN = "/" + AppConstant.APPLICATION_USER_NAME + "/**";
-    String RESOURCE_URL_PATTERN = "/" + AppConstant.APPLICATION_RESOURCE_NAME + "/**";
+    String RESOURCE_URL_PATTERN = "/" + AppConstant.APPLICATION_OSS + "/**";
     String LETTER_URL_PATTERN = "/" + AppConstant.APPLICATION_LETTER_NAME + "/**";
     String LETTER_MODEL_URL_PATTERN = "/" + AppConstant.APPLICATION_LETTER_MODEL_NAME + "/**";
     String NER_URL_PATTERN = "/" + AppConstant.APPLICATION_NER_SPECIFIC_NAME + "/**";

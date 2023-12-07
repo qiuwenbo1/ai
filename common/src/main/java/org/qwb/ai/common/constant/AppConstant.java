@@ -52,7 +52,7 @@ public interface AppConstant {
 	/**
 	 * 资源模块名称
 	 */
-	String APPLICATION_RESOURCE_NAME = APPLICATION_NAME_PREFIX + "resource";
+	String APPLICATION_OSS = APPLICATION_NAME_PREFIX + "oss";
 
 	/**
 	 * 资源模块名称
