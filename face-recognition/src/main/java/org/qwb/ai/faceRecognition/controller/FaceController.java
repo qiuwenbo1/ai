@@ -60,7 +60,7 @@ public class FaceController {
         FaceRecResultVO result = new FaceRecResultVO();
         List<FaceRecVO> faceRecList = Lists.newLinkedList();
 
-        List<FaceInfo> faceInfos;
+        List<FaceRecVO> faceInfos;
         ImageInfo rgbData = new ImageInfo();
 
         // 复制文件流
@@ -76,9 +76,8 @@ public class FaceController {
         faceInfos = insightFaceService.detect(file.getInputStream());
 
         if (CollectionUtil.isNotEmpty(faceInfos)) {
-            for (FaceInfo faceInfo : faceInfos) {
+            for (FaceRecVO faceInfo : faceInfos) {
                 FaceRecVO faceRecVO = new FaceRecVO();
-                faceRecVO.setRect(RectUtils.convertArcFace(faceInfo.getRect()));
                 List<Float> feature = insightFaceService.extractFaceFeature(file.getInputStream(), faceInfo);
                 if (feature != null) {
                     List<FaceCompareDto> faceCompareDtoList = insightFaceService.faceRecognition(feature, 0.75f);
@@ -120,7 +119,7 @@ public class FaceController {
         g.setStroke(new BasicStroke(width));
         g.setColor(Color.GREEN);
         for (FaceRecVO face : faceRecList) {
-            g.drawRect(face.getRect().getX(), face.getRect().getY(), face.getRect().getW(), face.getRect().getH());
+            g.drawRect(face.getX(), face.getY(), face.getW(), face.getH());
         }
         g.dispose();
         String labelImage = ImgUtil.toBase64DataUri(labelImg, ImgUtil.IMAGE_TYPE_JPEG);

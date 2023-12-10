@@ -5,15 +5,13 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.file.FileNameUtil;
-import com.arcsoft.face.FaceInfo;
 import feign.Response;
 import lombok.extern.log4j.Log4j2;
 import org.qwb.ai.common.api.R;
-import org.qwb.ai.common.pojo.Attach;
+import org.qwb.ai.common.entity.Attach;
 import org.qwb.ai.common.support.CommonCondition;
 import org.qwb.ai.common.support.Condition;
 import org.qwb.ai.common.utils.Func;
-import org.qwb.ai.faceRecognition.dto.FaceRectangle;
 import org.qwb.ai.faceRecognition.entity.FaceImage;
 import org.qwb.ai.faceRecognition.entity.Person;
 import org.qwb.ai.faceRecognition.entity.PersonImage;
@@ -22,16 +20,14 @@ import org.qwb.ai.faceRecognition.repository.FaceImageRepository;
 import org.qwb.ai.faceRecognition.repository.PersonImageRepository;
 import org.qwb.ai.faceRecognition.repository.PersonRepository;
 import org.qwb.ai.faceRecognition.service.FaceService;
-import org.qwb.ai.faceRecognition.service.IFaceReloadService;
 import org.qwb.ai.faceRecognition.utils.InMemoryMultipartFile;
-import org.qwb.ai.faceRecognition.utils.RectUtils;
+import org.qwb.ai.faceRecognition.vo.FaceRecVO;
 import org.qwb.ai.faceRecognition.vo.PersonImageVO;
 import org.qwb.ai.faceRecognition.vo.PersonVO;
 import org.qwb.ai.faceRecognition.wrapper.FaceInfoWrapper;
 import org.qwb.ai.faceRecognition.wrapper.PersonImageWrapper;
 import org.qwb.ai.faceRecognition.wrapper.PersonWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -127,7 +123,7 @@ public class PersonController{
         }
         baos.flush();
 
-        List<FaceInfo> faceInfos = insightFaceService.detect(file.getInputStream());
+        List<FaceRecVO> faceInfos = insightFaceService.detect(file.getInputStream());
         System.out.println(faceInfos);
         if (faceInfos != null) {
             if (faceInfos.size() > 1) {
@@ -159,12 +155,11 @@ public class PersonController{
         // 人脸照片存储
         InputStream stream3 = new ByteArrayInputStream(baos.toByteArray());
         ByteArrayOutputStream baos3 = new ByteArrayOutputStream(37628);
-        FaceInfo faceInfo = faceInfos.get(0);
-        FaceRectangle rec = RectUtils.convertArcFace(faceInfo.getRect());
+        FaceRecVO faceInfo = faceInfos.get(0);
         ImgUtil.cut(
                 stream3,
                 baos3,
-                new Rectangle(rec.getX(), rec.getY(), rec.getW(), rec.getH())
+                new Rectangle(faceInfo.getX(), faceInfo.getY(), faceInfo.getW(), faceInfo.getH())
         );
         InputStream stream4 = new ByteArrayInputStream(baos3.toByteArray());
         String originalName = file.getOriginalFilename();
@@ -175,14 +170,25 @@ public class PersonController{
         faceImage.setImage(personImage.getId());
         faceImage.setAttach(faceAttach.getId());
         faceImage.setPerson(person.getId());
-        faceImage.setX(rec.getX());
-        faceImage.setY(rec.getY());
-        faceImage.setW(rec.getW());
-        faceImage.setH(rec.getH());
+        faceImage.setX(faceInfo.getX());
+        faceImage.setY(faceInfo.getY());
+        faceImage.setW(faceInfo.getW());
+        faceImage.setH(faceInfo.getH());
         faceImage.setImageFile(faceAttach.getName());
         faceImageRepository.save(faceImage);
 
         return R.data(personImage);
+    }
+
+    public void process(){
+        //1. 遍历文件夹，对每张图片进行detect，将detect出的人脸与redis库进行比对。
+        //2. 如果没有相似的，对detect出的图像进行保存在本地人脸库，原图则保存至同目录相关图片库。创建该人脸特征库，并存储至redis
+        //3. 如果有相似的，将图片保存至对应人物的相关图片库
+        //
+        //
+        String sourcePath = "D:\\file\\个人\\照片\\01.日常记录\\2023";
+
+
     }
 
     @RequestMapping(value = "/addRec")
@@ -196,7 +202,7 @@ public class PersonController{
         }
         baos.flush();
 
-        List<FaceInfo> faceInfos = insightFaceService.detect(file.getInputStream());
+        List<FaceRecVO> faceInfos = insightFaceService.detect(file.getInputStream());
         System.out.println(faceInfos);
         if (faceInfos != null) {
             if (faceInfos.size() > 1) {
@@ -217,60 +223,6 @@ public class PersonController{
         log.info("上传照片花费时间【{}ms】", current2 - current1);
         PersonVO personVO = FaceInfoWrapper.build().entityVOwithAttach(faceInfos.get(0), attach);
         return R.data(personVO);
-    }
-
-
-    /**
-     * 人脸库数据集列表
-     * @param person
-     * @param pageable
-     * @return
-     */
-
-    @RequestMapping(value = "/list")
-    public R<Page<PersonVO>> datasetList(@RequestParam Map<String, Object> person,
-                                         @PageableDefault(page = 0, size = 20, sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<Person> list = personRepository.findAll(CommonCondition.getQuerySpecification(person, Person.class), pageable);
-        return R.data(new PageImpl<>(PersonWrapper.build().listVO(list.getContent()), pageable, list.getTotalElements()));
-    }
-
-    /**
-     * 列表
-     * @param person
-     * @return
-     */
-    @RequestMapping(value = "/list-all")
-    public R<List<PersonVO>> datasetList(@RequestParam Map<String, Object> person) {
-        List<Person> list = personRepository.findAll(Condition.getQuerySpesification(person, Person.class));
-        return R.data(PersonWrapper.build().listVO(list));
-    }
-
-    /**
-     * 获取所有人物
-     * @param person
-     * @return
-     */
-    @RequestMapping(value = "/list-faster")
-    public R<List<Person>> listFaster(@RequestParam Map<String, Object> person) {
-        List<Person> list = personRepository.findAll(Condition.getQuerySpesification(person, Person.class));
-        return R.data(list);
-    }
-
-    /**
-     * 修改人物
-     * @param name
-     * @param description
-     * @param coverFile
-     * @param personId
-     * @return
-     */
-    @RequestMapping(value = "/update")
-    public R edit(@RequestParam String name, @RequestParam(required = false, defaultValue = "") String description, @RequestParam String coverFile, @RequestParam Long personId) {
-        Person person = personRepository.findById(personId).get();
-        person.setName(name);
-        person.setDescription(description);
-        person.setCoverFile(Convert.toLong(coverFile));
-        return R.data(personRepository.save(person));
     }
 
     /**
@@ -329,6 +281,60 @@ public class PersonController{
         personRepository.save(person);
 
         return R.data(person);
+    }
+
+
+    /**
+     * 人脸库数据集列表
+     * @param person
+     * @param pageable
+     * @return
+     */
+
+    @RequestMapping(value = "/list")
+    public R<Page<PersonVO>> datasetList(@RequestParam Map<String, Object> person,
+                                         @PageableDefault(page = 0, size = 20, sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Person> list = personRepository.findAll(CommonCondition.getQuerySpecification(person, Person.class), pageable);
+        return R.data(new PageImpl<>(PersonWrapper.build().listVO(list.getContent()), pageable, list.getTotalElements()));
+    }
+
+    /**
+     * 列表
+     * @param person
+     * @return
+     */
+    @RequestMapping(value = "/list-all")
+    public R<List<PersonVO>> datasetList(@RequestParam Map<String, Object> person) {
+        List<Person> list = personRepository.findAll(Condition.getQuerySpesification(person, Person.class));
+        return R.data(PersonWrapper.build().listVO(list));
+    }
+
+    /**
+     * 获取所有人物
+     * @param person
+     * @return
+     */
+    @RequestMapping(value = "/list-faster")
+    public R<List<Person>> listFaster(@RequestParam Map<String, Object> person) {
+        List<Person> list = personRepository.findAll(Condition.getQuerySpesification(person, Person.class));
+        return R.data(list);
+    }
+
+    /**
+     * 修改人物
+     * @param name
+     * @param description
+     * @param coverFile
+     * @param personId
+     * @return
+     */
+    @RequestMapping(value = "/update")
+    public R edit(@RequestParam String name, @RequestParam(required = false, defaultValue = "") String description, @RequestParam String coverFile, @RequestParam Long personId) {
+        Person person = personRepository.findById(personId).get();
+        person.setName(name);
+        person.setDescription(description);
+        person.setCoverFile(Convert.toLong(coverFile));
+        return R.data(personRepository.save(person));
     }
 
     /**

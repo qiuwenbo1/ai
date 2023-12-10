@@ -44,6 +44,7 @@ import org.qwb.ai.faceRecognition.repository.PersonImageRepository;
 import org.qwb.ai.faceRecognition.service.FaceService;
 import org.qwb.ai.faceRecognition.utils.RectUtils;
 import org.qwb.ai.faceRecognition.utils.RedisUtil;
+import org.qwb.ai.faceRecognition.vo.FaceRecVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,10 +56,7 @@ import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
@@ -135,33 +133,16 @@ public class InsightFaceServiceImpl implements FaceService {
                 if (image == null) {
                     continue;
                 }
-                BufferedImage bufferedImage;
+                List<FaceRecVO> result;
                 try (InputStream faceImageIns = iOssEndPoint.getFileIns(faceImage.getImageFile()).body().asInputStream()) {
-                    bufferedImage = ImageIO.read(faceImageIns);
+                    String data = picsToBase64(faceImageIns);
+                    if (data == null) continue;
+                    result =  detectPlusByBase64(List.of(data));
                 }
-                if (bufferedImage == null) {
-                    logger.error("minio不存在的图片：【{}】", faceImage.getImageFile());
-                    continue;
-                }
-                Image img = ImgUtil.scale(bufferedImage, 112, 112);
-                String data = ImgUtil.toBase64DataUri(img, ImgUtil.IMAGE_TYPE_JPEG);
-                JSONObject requestParams = getRequestParam();
-                requestParams.set("embed_only", true);
-                requestParams.set("extract_embedding", true);
-
-                // 数据
-                Map<String, Object> dataMap = new HashMap<>();
-                dataMap.put("data", List.of(data));
-                requestParams.set("images", dataMap);
-
-                String url = baseUri + "/extract";
-                String result = HttpUtil.post(url, requestParams.toString());
-
-                if (JSONUtil.isTypeJSON(result)) {
-                    List<Float> vec = JSONUtil.parseObj(result).getJSONArray("data").getJSONObject(0).getJSONArray("vec").toList(Float.class);
-                    FaceInfoDto faceInfoDto = new FaceInfoDto(faceImage.getId(), vec);
+                for (FaceRecVO faceRecVO : result) {
+                    FaceInfoDto faceInfoDto = new FaceInfoDto(faceImage.getId(), faceRecVO.getVec());
                     faceFeatureMap.put(Convert.toStr(faceImage.getId()), faceInfoDto);
-                    vecList.add(vec);
+                    vecList.add(faceRecVO.getVec());
                     faceIds.add(faceImage.getId());
                 }
                 pb.step();
@@ -174,57 +155,89 @@ public class InsightFaceServiceImpl implements FaceService {
         }
     }
 
+    private String picsToBase64(InputStream faceImageIns) throws IOException {
+        BufferedImage bufferedImage;
+        bufferedImage = ImageIO.read(faceImageIns);
+
+        if (bufferedImage == null) {
+            logger.error("minio不存在的图片");
+            return null;
+        }
+        Image img = ImgUtil.scale(bufferedImage, 112, 112);
+        return ImgUtil.toBase64DataUri(img, ImgUtil.IMAGE_TYPE_JPEG);
+    }
 
     @Override
-    public List<FaceInfo> detect(File image) {
+    public List<FaceRecVO> detectPlusByLinks(List<String> urls) {
+        JSONObject requestParams = getRequestParam();
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("urls", List.of(urls));
+        requestParams.set("images", dataMap);
+        return faceInfoResultProcess(facePost(requestParams));
+    }
+
+    @Override
+    public List<FaceRecVO> detectPlusByBase64(List<String> base64) {
+        JSONObject requestParams = getRequestParam();
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("data", List.of(base64));
+        requestParams.set("images", dataMap);
+        return faceInfoResultProcess(facePost(requestParams));
+    }
+
+    @Override
+    public List<FaceRecVO> detect(File image) {
         return detect(FileUtil.getInputStream(image));
     }
 
     @Override
     @SneakyThrows
-    public List<FaceInfo> detect(InputStream ins) {
-        List<FaceInfo> faceInfos = new ArrayList<>();
-
-
+    public List<FaceRecVO> detect(InputStream ins) {
         String data = ImgUtil.toBase64DataUri(ImgUtil.toImage(IoUtil.readBytes(ins)), ImgUtil.IMAGE_TYPE_JPEG);
-
         JSONObject requestParams = getRequestParam();
-
         // 数据
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.put("data", List.of(data));
         requestParams.set("images", dataMap);
+        return faceInfoResultProcess(facePost(requestParams));
+    }
 
+    public String facePost(JSONObject requestParams) {
         String url = baseUri + "/extract";
-        String result = HttpUtil.post(url, requestParams.toString());
+        return HttpUtil.post(url, requestParams.toString());
+    }
 
-        if (JSONUtil.isJson(result)) {
-            JSONObject resultObj = JSONUtil.parseObj(result);
+    /**
+     * 人脸特征信息结果处理
+     *
+     * @param faceInfoResult 算法请求后的人脸特征信息结果
+     * @return 处理后的数据
+     */
+    public List<FaceRecVO> faceInfoResultProcess(String faceInfoResult) {
+        List<FaceRecVO> faceInfos = new ArrayList<>();
+        if (JSONUtil.isTypeJSON(faceInfoResult)) {
+            JSONObject resultObj = JSONUtil.parseObj(faceInfoResult);
             JSONArray faceData = resultObj.getJSONArray("data").getJSONObject(0).getJSONArray("faces");
             for (int i = 0; i < faceData.size(); i++) {
                 JSONObject faceObj = faceData.getJSONObject(i);
-                FaceInfo faceInfo = new FaceInfo();
                 List<Integer> bbox = faceObj.getJSONArray("bbox").toList(Integer.class);
-                faceInfo.setRect(new Rect(bbox.get(0), bbox.get(1), bbox.get(2), bbox.get(3)));
-                faceInfos.add(faceInfo);
+                FaceRecVO faceRecVO = new FaceRecVO(bbox.get(0), bbox.get(1), bbox.get(2), bbox.get(3));
+                faceRecVO.setVec(faceObj.containsKey("vec") ? faceObj.getJSONArray("vec").toList(Float.class) : null);
+                faceInfos.add(faceRecVO);
             }
-
         }
         return faceInfos;
     }
 
-
-
     @Override
-    public List<Float> extractFaceFeature(InputStream ins, FaceInfo faceInfo) {
+    public List<Float> extractFaceFeature(InputStream ins, FaceRecVO faceInfo) {
         // 裁剪人脸图片
         ByteArrayOutputStream os = new ByteArrayOutputStream(37628);
-        FaceRectangle rec = RectUtils.convertArcFace(faceInfo.getRect());
         long cutStart = DateUtil.current();
         ImgUtil.cut(
                 ins,
                 os,
-                new Rectangle(rec.getX(), rec.getY(), rec.getW(), rec.getH())
+                new Rectangle(faceInfo.getX(), faceInfo.getY(), faceInfo.getW(), faceInfo.getH())
         );
         logger.info("裁剪耗时：{}s", (DateUtil.current() - cutStart) / 1000.0);
         long base64Start = DateUtil.current();
@@ -407,17 +420,17 @@ public class InsightFaceServiceImpl implements FaceService {
     }
 
     @Override
-    public List<FaceInfo> detect(InputStream ins, String imgType) {
+    public List<FaceRecVO> detect(InputStream ins, String imgType) {
         return null;
     }
 
     @Override
-    public List<FaceInfo> detect(ImageInfo imageInfo) {
+    public List<FaceRecVO> detect(ImageInfo imageInfo) {
         return null;
     }
 
     @Override
-    public byte[] extractFaceFeature(ImageInfo imageInfo, FaceInfo faceInfo) {
+    public byte[] extractFaceFeature(ImageInfo imageInfo, FaceRecVO faceInfo) {
         return new byte[0];
     }
 

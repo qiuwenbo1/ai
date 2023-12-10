@@ -4,8 +4,8 @@ import cn.hutool.json.JSONObject;
 import feign.Response;
 import org.qwb.ai.common.api.R;
 import org.qwb.ai.common.constant.AppConstant;
-import org.qwb.ai.common.pojo.AiCloudFile;
-import org.qwb.ai.common.pojo.Attach;
+import org.qwb.ai.common.dto.UploadFileDto;
+import org.qwb.ai.common.entity.Attach;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -44,29 +44,17 @@ public interface IOssEndPoint {
     @GetMapping(path + "/attach-by-id-with-tenant")
     R<JSONObject> attachByIdWithTenant(@RequestParam Long attachId, @RequestParam String tenantId);
 
-    @PostMapping(value = path + "/put-file",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    R<AiCloudFile> putFile(@RequestPart MultipartFile file);
-
     @PostMapping(path + "/put-file-ins")
-    R<JSONObject> putFileIns(@RequestParam String fileName, @RequestParam byte[] fileContent);
+    R<Attach> putFileIns(@RequestBody UploadFileDto dto);
 
     @PostMapping(path + "/put-file-by-name")
     R<JSONObject> putFile(@RequestParam String fileName, @RequestParam MultipartFile file);
 
-    @PostMapping(value = path + "/put-file-attach",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    R<JSONObject> putFileAttach(@RequestPart MultipartFile file);
-
     @PostMapping(value = path + "/put-attach", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     R<Attach> putAttach(@RequestPart MultipartFile file);
 
-    @PostMapping(value = path + "/put-attach-with-tenant", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    R<JSONObject> putAttachWithTenant(@RequestPart MultipartFile file, @RequestParam String tenantId);
-
     @PostMapping(path + "/put-attach-ins")
     R<JSONObject> putInsAttach(@RequestParam String fileName, @RequestParam InputStream ins);
-
-    @PostMapping(path + "/put-file-attach-by-name")
-    R<JSONObject> putFileAttach(@RequestParam String fileName, @RequestParam MultipartFile file);
 
     @PostMapping(path + "/remove-file")
     R removeFile(@RequestParam String fileName);

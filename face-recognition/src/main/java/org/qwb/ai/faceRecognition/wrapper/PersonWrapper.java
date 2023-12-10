@@ -2,7 +2,7 @@ package org.qwb.ai.faceRecognition.wrapper;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
-import org.qwb.ai.common.pojo.Attach;
+import org.qwb.ai.common.entity.Attach;
 import org.qwb.ai.common.support.BaseEntityWrapper;
 import org.qwb.ai.common.utils.SpringUtil;
 import org.qwb.ai.faceRecognition.entity.Person;

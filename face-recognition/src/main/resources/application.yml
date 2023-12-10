@@ -14,6 +14,7 @@ mysql:
     driverClassName: com.mysql.cj.jdbc.Driver
     packages:
       - org.qwb.ai.faceRecognition.entity
+      - org.qwb.ai.common.entity
 spring:
   cloud:
     nacos:
@@ -50,8 +51,8 @@ app:
     #    sdkKey: C2PBqUdtHC9ZRjqay3LBgmvzRTp9xXb8CZnZDojj9dtG
     sdkKey: C2PBqUdtHC9ZRjqay3LBgmvzZaPJ82X6NTeznQEWuHep
     activeFile: /LINUX64/82E111E8L13AM5CB.dat
-    detectPoolSize: 10
-    comparePoolSize: 10
+    detectPoolSize: 20
+    comparePoolSize: 20
   insight:
     baseUri: http://192.168.1.3:18081 #GPU
 # 设置ribbon超时时间
