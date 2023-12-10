@@ -27,4 +27,5 @@ public class AiCloudFile {
 	 * 附件表ID
 	 */
 	private Long attachId;
+	private String etag;
 }   

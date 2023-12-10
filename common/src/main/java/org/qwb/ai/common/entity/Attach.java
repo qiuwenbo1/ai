@@ -1,4 +1,4 @@
-package org.qwb.ai.common.pojo;
+package org.qwb.ai.common.entity;
 
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -16,7 +16,7 @@ import javax.persistence.*;
 @Getter
 @Setter
 @Entity
-@Table(name = "ai_attach")
+@Table(name = "ai_attach",indexes = {@Index(columnList = "etag")})
 @NoArgsConstructor
 public class Attach {
 
@@ -38,6 +38,8 @@ public class Attach {
 	 * 附件名称
 	 */
 	private String name;
+
+	private String etag;
 	/**
 	 * 附件原名
 	 */
