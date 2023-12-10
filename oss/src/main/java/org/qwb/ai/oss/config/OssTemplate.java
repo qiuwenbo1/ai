@@ -3,7 +3,7 @@ package org.qwb.ai.oss.config;
 import java.io.InputStream;
 import java.util.List;
 
-import org.qwb.ai.common.pojo.AiCloudFile;
+import org.qwb.ai.common.entity.Attach;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface OssTemplate {
@@ -106,7 +106,7 @@ public interface OssTemplate {
 	 * @param file 上传文件类
 	 * @return AiCloudFile
 	 */
-	AiCloudFile putFile(MultipartFile file);
+	Attach putFile(MultipartFile file);
 
 	/**
 	 * 上传文件
@@ -115,7 +115,7 @@ public interface OssTemplate {
 	 * @param fileName 上传文件名
 	 * @return AiCloudFile
 	 */
-	AiCloudFile putFile(String fileName, MultipartFile file);
+	Attach putFile(String fileName, MultipartFile file);
 
 	/**
 	 * 上传文件
@@ -125,7 +125,7 @@ public interface OssTemplate {
 	 * @param file       上传文件类
 	 * @return AiCloudFile
 	 */
-	AiCloudFile putFile(String bucketName, String fileName, MultipartFile file);
+	Attach putFile(String bucketName, String fileName, MultipartFile file);
 
 	/**
 	 * 上传文件
@@ -134,7 +134,7 @@ public interface OssTemplate {
 	 * @param stream   文件流
 	 * @return AiCloudFile
 	 */
-	AiCloudFile putFile(String fileName, InputStream stream);
+	Attach putFile(String fileName, InputStream stream);
 
 	/**
 	 * 上传文件
@@ -144,7 +144,7 @@ public interface OssTemplate {
 	 * @param stream     文件流
 	 * @return AiCloudFile
 	 */
-	AiCloudFile putFile(String bucketName, String fileName, InputStream stream);
+	Attach putFile(String bucketName, String fileName, InputStream stream);
 
 	/**
 	 * 删除文件

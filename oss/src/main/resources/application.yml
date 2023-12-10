@@ -27,7 +27,7 @@ mysql:
     password: PsOsGgN0rfXfIPbz
     driverClassName: com.mysql.cj.jdbc.Driver
     packages:
-      - org.qwb.ai.common.pojo
+      - org.qwb.ai.common.entity
 oss:
   bucket-name: ai-cloud-001
   name: minio

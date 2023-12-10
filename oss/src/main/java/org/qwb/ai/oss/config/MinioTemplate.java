@@ -5,7 +5,7 @@ import java.util.*;
 
 import io.minio.*;
 import io.minio.messages.DeleteObject;
-import org.qwb.ai.common.pojo.AiCloudFile;
+import org.qwb.ai.common.entity.Attach;
 import org.qwb.ai.common.utils.StringPool;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -171,46 +171,49 @@ public class MinioTemplate implements OssTemplate {
 
     @Override
     @SneakyThrows
-    public AiCloudFile putFile(MultipartFile file) {
+    public Attach putFile(MultipartFile file) {
         return putFile(ossProperties.getBucketName(), file.getOriginalFilename(), file);
     }
 
     @Override
     @SneakyThrows
-    public AiCloudFile putFile(String fileName, MultipartFile file) {
+    public Attach putFile(String fileName, MultipartFile file) {
         return putFile(ossProperties.getBucketName(), fileName, file);
     }
 
     @Override
     @SneakyThrows
-    public AiCloudFile putFile(String bucketName, String fileName, MultipartFile file) {
+    public Attach putFile(String bucketName, String fileName, MultipartFile file) {
         return putFile(bucketName, file.getOriginalFilename(), file.getInputStream());
     }
 
     @Override
     @SneakyThrows
-    public AiCloudFile putFile(String fileName, InputStream stream) {
+    public Attach putFile(String fileName, InputStream stream) {
         return putFile(ossProperties.getBucketName(), fileName, stream);
     }
 
     @Override
     @SneakyThrows
-    public AiCloudFile putFile(String bucketName, String fileName, InputStream stream) {
+    public Attach putFile(String bucketName, String fileName, InputStream stream) {
         return putFile(bucketName, fileName, stream, "application/octet-stream");
     }
 
     @SneakyThrows
-    public AiCloudFile putFile(String bucketName, String fileName, InputStream stream, String contentType) {
+    public Attach putFile(String bucketName, String fileName, InputStream stream, String contentType) {
         makeBucket(bucketName);
         String originalName = fileName;
         fileName = getFileName(fileName);
-        client.putObject(PutObjectArgs.builder().bucket(bucketName).object(fileName).stream(
+        ObjectWriteResponse response = client.putObject(PutObjectArgs.builder().bucket(bucketName)
+                .object(fileName)
+                .userMetadata(Map.of("originName",originalName)).stream(
                         stream, -1, 10485760)
                 .contentType(contentType)
                 .build());
-        AiCloudFile file = new AiCloudFile();
+        Attach file = new Attach();
         file.setOriginalName(originalName);
         file.setName(fileName);
+        file.setEtag(response.etag());
         file.setDomain(getOssHost(bucketName));
         file.setLink(fileLink(bucketName, fileName));
         return file;
