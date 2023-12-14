@@ -8,12 +8,9 @@ import org.qwb.ai.common.utils.SpringUtil;
 import org.qwb.ai.faceRecognition.entity.Person;
 import org.qwb.ai.faceRecognition.feign.IOssEndPoint;
 import org.qwb.ai.faceRecognition.repository.FaceImageRepository;
-import org.qwb.ai.faceRecognition.repository.PersonImageRepository;
 import org.qwb.ai.faceRecognition.vo.PersonVO;
 
 public class PersonWrapper extends BaseEntityWrapper<Person, PersonVO> {
-
-    private static PersonImageRepository personImageRepository;
     private static FaceImageRepository faceImageRepository;
     private static IOssEndPoint ossEndPoint;
 
@@ -23,7 +20,6 @@ public class PersonWrapper extends BaseEntityWrapper<Person, PersonVO> {
     }
 
     static {
-        personImageRepository = SpringUtil.getBean(PersonImageRepository.class);
         faceImageRepository = SpringUtil.getBean(FaceImageRepository.class);
         ossEndPoint = SpringUtil.getBean(IOssEndPoint.class);
     }
@@ -34,7 +30,6 @@ public class PersonWrapper extends BaseEntityWrapper<Person, PersonVO> {
         PersonVO vo = BeanUtil.copyProperties(entity, PersonVO.class);
 
 //        vo.setCreateUserName(userClient.userById(entity.getCreateUser()).getData().getName());
-        vo.setImageNum(personImageRepository.countByPerson(entity.getId()));
         vo.setCreateTime(DateUtil.formatDate(entity.getCreateTime()));
 
         // 处理封面图片

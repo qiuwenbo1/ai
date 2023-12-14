@@ -10,13 +10,4 @@ import java.util.List;
 
 @Repository
 public interface FaceImageRepository extends JpaRepository<FaceImage, Long>, JpaSpecificationExecutor<FaceImage> {
-    @Transactional
-    void deleteByPerson(Long id);
-
-    List<FaceImage> findByImage(Long id);
-
-    FaceImage findByImageAndPerson(Long id, Long id1);
-
-    @Transactional
-    void deleteByImage(Long id);
 }

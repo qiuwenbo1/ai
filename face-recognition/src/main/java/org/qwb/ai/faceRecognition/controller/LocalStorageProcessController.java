@@ -49,7 +49,7 @@ public class LocalStorageProcessController {
             List<File> fileList = entry.getValue();
             List<FaceStorage> storages = localProcessService.isProcessed(key);
             if (fileList.size() == storages.size()) continue;
-            localProcessService.process(fileList);
+//            localProcessService.fileDetect(fileList);
         }
         for (File file : files) {
             String suffix = FileUtil.getSuffix(file);
@@ -59,7 +59,7 @@ public class LocalStorageProcessController {
                 R<Attach> objectR = iOssEndPoint.putFileIns(new UploadFileDto(file.getName(), inputStream.readAllBytes()));
                 Attach data = objectR.getData();
                 String link = data.getLink();
-                List<FaceRecVO> faceRecVOS = insightFaceService.detectPlusByLinks(Collections.singletonList(link));
+                List<FaceRecVO> faceRecVOS = insightFaceService.detectPlusByLinks(Collections.singletonList(link)).get(0);
                 if (faceRecVOS.isEmpty()) continue;
             } catch (IOException e) {
                 log.error("文件上传失败。原因：【{}】，文件全路径：【{}】",e.getMessage(),file.getAbsolutePath());

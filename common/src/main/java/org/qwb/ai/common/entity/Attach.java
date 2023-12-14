@@ -35,7 +35,7 @@ public class Attach {
 	 */
 	private String domain;
 	/**
-	 * 附件名称
+	 * 附件名称,path路径（去除parentPath）
 	 */
 	private String name;
 

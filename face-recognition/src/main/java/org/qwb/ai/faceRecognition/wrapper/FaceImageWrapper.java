@@ -24,7 +24,7 @@ public class FaceImageWrapper extends BaseEntityWrapper<FaceImage, FaceImageVO> 
     public FaceImageVO entityVO(FaceImage entity) {
         FaceImageVO vo = BeanUtil.copyProperties(entity, FaceImageVO.class);
 
-        vo.setUrl(ossEndPoint.fileLink(entity.getImageFile()).getData());
+        vo.setUrl(ossEndPoint.fileLink(entity.getFaceAttachName()).getData());
 
         return vo;
     }

@@ -28,4 +28,8 @@ public class Person extends AbstractBaseEntity {
     private Long faceFile;
 
     private String description;
+    /**
+     * 人物本地存储路径
+     */
+    private String LocalFolderPath;
 }

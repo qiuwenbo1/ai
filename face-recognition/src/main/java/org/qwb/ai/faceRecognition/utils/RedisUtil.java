@@ -16,7 +16,7 @@ import javax.annotation.Resource;
 public class RedisUtil {
     
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<Object, Object> redisTemplate;
 
 	//=============================common============================
 

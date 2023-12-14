@@ -30,4 +30,6 @@ public class FaceStorage extends AbstractBaseEntity{
 
     private Long attachId;
 
+    private Boolean hasFace;
+
 }

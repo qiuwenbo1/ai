@@ -16,19 +16,19 @@ public interface ILocalProcessService {
      */
     List<FaceStorage> isProcessed(String path);
 
-    @Async
-    void process(String path);
+//    @Async
+//    void process(String path);
 
-    /**
-     * 对一批文件进行人脸识别处理
-     * @param files 文件集合
-     */
-    Map<File,List<FaceRecVO>> process(List<File> files);
+//    /**
+//     * 对一批文件进行人脸检测
+//     * @param files 文件集合
+//     */
+//    Map<File,List<FaceRecVO>> fileDetect(List<File> files);
 
-    /**
-     * 新构建本地人脸特征文件夹
-     * @param file 源文件
-     * @param faceRecVO 文件人脸特征集合
-     */
-    void buildFaceFeatureFolder(File file,FaceRecVO faceRecVO);
+//    /**
+//     * 新构建本地人脸特征文件夹
+//     * File 源文件
+//     * List<FaceRecVO> 文件人脸特征集合
+//     */
+//    void buildFaceFeatureFolder(Map<File, List<FaceRecVO>> detectMap);
 }

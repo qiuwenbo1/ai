@@ -6,48 +6,34 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.arcsoft.face.EngineConfiguration;
-import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.FunctionConfiguration;
-import com.arcsoft.face.Rect;
 import com.arcsoft.face.enums.DetectMode;
 import com.arcsoft.face.enums.DetectOrient;
 import com.arcsoft.face.toolkit.ImageInfo;
 import com.google.common.collect.Lists;
-import io.milvus.grpc.SearchResults;
-import io.milvus.param.MetricType;
-import io.milvus.param.dml.InsertParam;
-import io.milvus.param.dml.SearchParam;
-import io.milvus.response.SearchResultsWrapper;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import me.tongfei.progressbar.ProgressBar;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.qwb.ai.common.constant.AppConstant;
 import org.qwb.ai.faceRecognition.dto.FaceCompareDto;
 import org.qwb.ai.faceRecognition.dto.FaceConstant;
 import org.qwb.ai.faceRecognition.dto.FaceInfoDto;
-import org.qwb.ai.faceRecognition.dto.FaceRectangle;
 import org.qwb.ai.faceRecognition.entity.FaceImage;
-import org.qwb.ai.faceRecognition.entity.PersonImage;
 import org.qwb.ai.faceRecognition.feign.IOssEndPoint;
 import org.qwb.ai.faceRecognition.insight.InsightCompareEngine;
 import org.qwb.ai.faceRecognition.insight.InsightEngineFactory;
 import org.qwb.ai.faceRecognition.repository.FaceImageRepository;
-import org.qwb.ai.faceRecognition.repository.PersonImageRepository;
 import org.qwb.ai.faceRecognition.service.FaceService;
-import org.qwb.ai.faceRecognition.utils.RectUtils;
 import org.qwb.ai.faceRecognition.utils.RedisUtil;
 import org.qwb.ai.faceRecognition.vo.FaceRecVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -71,8 +57,6 @@ public class InsightFaceServiceImpl implements FaceService {
     private Logger logger = LoggerFactory.getLogger(InsightFaceServiceImpl.class);
     @Resource
     private FaceImageRepository faceImageRepository;
-    @Resource
-    private PersonImageRepository personImageRepository;
     @Resource
     private IOssEndPoint iOssEndPoint;
     @Resource
@@ -122,23 +106,20 @@ public class InsightFaceServiceImpl implements FaceService {
         Set<String> faceIdSet = Convert.toSet(String.class, new ArrayList<>(objs.keySet()));
         logger.info("初始化Insight Face人脸特征库");
         List<FaceImage> faceImages = faceImageRepository.findAll().stream().filter(m -> !faceIdSet.contains(String.valueOf(m.getId()))).collect(Collectors.toList());
-
         Map<String, Object> faceFeatureMap = new HashMap<>();
-
         try (ProgressBar pb = new ProgressBar("处理人脸图像特征", faceImages.size())) {
             List<List<Float>> vecList = new ArrayList<>();
             List<Long> faceIds = new ArrayList<>();
             for (FaceImage faceImage : faceImages) {
-                PersonImage image = personImageRepository.findById(faceImage.getImage()).orElse(null);
-                if (image == null) {
-                    continue;
-                }
-                List<FaceRecVO> result;
-                try (InputStream faceImageIns = iOssEndPoint.getFileIns(faceImage.getImageFile()).body().asInputStream()) {
+                List<FaceRecVO> result = null;
+                try (InputStream faceImageIns = iOssEndPoint.getFileIns(faceImage.getFaceAttachName()).body().asInputStream()) {
                     String data = picsToBase64(faceImageIns);
                     if (data == null) continue;
-                    result =  detectPlusByBase64(List.of(data));
+                    result = detectPlusByBase64(List.of(data)).get(0);
+                }catch (Exception e){
+                    logger.error(e.getMessage());
                 }
+                assert result != null;
                 for (FaceRecVO faceRecVO : result) {
                     FaceInfoDto faceInfoDto = new FaceInfoDto(faceImage.getId(), faceRecVO.getVec());
                     faceFeatureMap.put(Convert.toStr(faceImage.getId()), faceInfoDto);
@@ -151,7 +132,7 @@ public class InsightFaceServiceImpl implements FaceService {
             boolean status = redisUtil.hmset(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY, faceFeatureMap);
             logger.info("人脸库特征存储redis状态：【{}】", status);
         } catch (Exception e) {
-            logger.error("{}", e.getMessage());
+            logger.error("{}--{}",InsightFaceServiceImpl.class, e.getMessage());
         }
     }
 
@@ -168,7 +149,7 @@ public class InsightFaceServiceImpl implements FaceService {
     }
 
     @Override
-    public List<FaceRecVO> detectPlusByLinks(List<String> urls) {
+    public List<List<FaceRecVO>> detectPlusByLinks(List<String> urls) {
         JSONObject requestParams = getRequestParam();
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.put("urls", List.of(urls));
@@ -176,12 +157,17 @@ public class InsightFaceServiceImpl implements FaceService {
         return faceInfoResultProcess(facePost(requestParams));
     }
 
+    /**
+     * 走base64的默认都是纯人脸特征
+     * @param base64 人脸特征
+     */
     @Override
-    public List<FaceRecVO> detectPlusByBase64(List<String> base64) {
+    public List<List<FaceRecVO>> detectPlusByBase64(List<String> base64) {
         JSONObject requestParams = getRequestParam();
         Map<String, Object> dataMap = new HashMap<>();
-        dataMap.put("data", List.of(base64));
+        dataMap.put("data", base64);
         requestParams.set("images", dataMap);
+        System.out.println(requestParams);
         return faceInfoResultProcess(facePost(requestParams));
     }
 
@@ -199,7 +185,7 @@ public class InsightFaceServiceImpl implements FaceService {
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.put("data", List.of(data));
         requestParams.set("images", dataMap);
-        return faceInfoResultProcess(facePost(requestParams));
+        return faceInfoResultProcess(facePost(requestParams)).get(0);
     }
 
     public String facePost(JSONObject requestParams) {
@@ -213,20 +199,24 @@ public class InsightFaceServiceImpl implements FaceService {
      * @param faceInfoResult 算法请求后的人脸特征信息结果
      * @return 处理后的数据
      */
-    public List<FaceRecVO> faceInfoResultProcess(String faceInfoResult) {
-        List<FaceRecVO> faceInfos = new ArrayList<>();
-        if (JSONUtil.isTypeJSON(faceInfoResult)) {
-            JSONObject resultObj = JSONUtil.parseObj(faceInfoResult);
-            JSONArray faceData = resultObj.getJSONArray("data").getJSONObject(0).getJSONArray("faces");
-            for (int i = 0; i < faceData.size(); i++) {
-                JSONObject faceObj = faceData.getJSONObject(i);
+    public List<List<FaceRecVO>> faceInfoResultProcess(String faceInfoResult) {
+        ArrayList<List<FaceRecVO>> result = new ArrayList<>();
+        if (!JSONUtil.isTypeJSON(faceInfoResult)) return result;
+        JSONObject resultObj = JSONUtil.parseObj(faceInfoResult);
+        for (Object data : resultObj.getJSONArray("data")) {
+            JSONObject parsed = JSONUtil.parseObj(data);
+            JSONArray faces = parsed.getJSONArray("faces");
+            List<FaceRecVO> faceInfos = new ArrayList<>();
+            for (int i = 0; i < faces.size(); i++) {
+                JSONObject faceObj = faces.getJSONObject(i);
                 List<Integer> bbox = faceObj.getJSONArray("bbox").toList(Integer.class);
                 FaceRecVO faceRecVO = new FaceRecVO(bbox.get(0), bbox.get(1), bbox.get(2), bbox.get(3));
                 faceRecVO.setVec(faceObj.containsKey("vec") ? faceObj.getJSONArray("vec").toList(Float.class) : null);
                 faceInfos.add(faceRecVO);
             }
+            result.add(faceInfos);
         }
-        return faceInfos;
+        return result;
     }
 
     @Override
@@ -403,7 +393,7 @@ public class InsightFaceServiceImpl implements FaceService {
         requestParams.set("threshold", 0.6);
         requestParams.set("embed_only", false);
         requestParams.set("return_landmarks", false);
-        requestParams.set("extract_embedding", false);
+        requestParams.set("extract_embedding", true);
         requestParams.set("extract_ga", false);
         requestParams.set("detect_masks", false);
         requestParams.set("limit_faces", 0);

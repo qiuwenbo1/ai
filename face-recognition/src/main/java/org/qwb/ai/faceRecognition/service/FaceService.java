@@ -15,8 +15,8 @@ public interface FaceService {
      * 人脸检测
      * @param urls 图片url地址
      */
-    List<FaceRecVO> detectPlusByLinks(List<String> urls);
-    List<FaceRecVO> detectPlusByBase64(List<String> base64);
+    List<List<FaceRecVO>> detectPlusByLinks(List<String> urls);
+    List<List<FaceRecVO>> detectPlusByBase64(List<String> base64);
     /**
      * 人脸检测
      * @param image 图片文件

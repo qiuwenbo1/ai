@@ -85,7 +85,7 @@ public class FaceController {
                         Long faceId = faceCompareDtoList.get(0).getId();
                         FaceImage faceImage = faceImageRepository.findById(faceId).orElse(null);
                         if (faceImage != null) {
-                            Person person = personRepository.findById(faceImage.getPerson()).orElse(new Person());
+                            Person person = personRepository.findById(faceImage.getPersonId()).orElse(new Person());
                             faceRecVO.setName(person.getName());
                             faceRecVO.setPersonId(person.getId());
                             faceRecVO.setSimilar(faceCompareDtoList.get(0).getSimilar());
