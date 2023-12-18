@@ -3,6 +3,7 @@ package org.qwb.ai.faceRecognition.service;
 import com.arcsoft.face.FaceInfo;
 import com.arcsoft.face.toolkit.ImageInfo;
 import org.qwb.ai.faceRecognition.dto.FaceCompareDto;
+import org.qwb.ai.faceRecognition.dto.FaceInfoDto;
 import org.qwb.ai.faceRecognition.vo.FaceRecVO;
 
 import java.io.File;
@@ -41,6 +42,12 @@ public interface FaceService {
      * 初始化人脸库
      */
     void initFaceRepo();
+
+    /**
+     * 添加人脸特征到redis
+     * @param faceInfoDto 人脸特征
+     */
+    void addFeatureToRedis(FaceInfoDto faceInfoDto);
 
 
     List<FaceCompareDto> faceRecognition(byte[] faceFeature, float passRate);

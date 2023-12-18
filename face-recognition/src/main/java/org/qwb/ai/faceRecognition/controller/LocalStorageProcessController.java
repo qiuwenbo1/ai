@@ -57,8 +57,8 @@ public class LocalStorageProcessController {
                 continue;
             try (FileInputStream inputStream = new FileInputStream(file)) {
                 R<Attach> objectR = iOssEndPoint.putFileIns(new UploadFileDto(file.getName(), inputStream.readAllBytes()));
-                Attach data = objectR.getData();
-                String link = data.getLink();
+                Attach data = objectR.getData();;
+                String link = iOssEndPoint.fileLink(data.getName()).getData();
                 List<FaceRecVO> faceRecVOS = insightFaceService.detectPlusByLinks(Collections.singletonList(link)).get(0);
                 if (faceRecVOS.isEmpty()) continue;
             } catch (IOException e) {

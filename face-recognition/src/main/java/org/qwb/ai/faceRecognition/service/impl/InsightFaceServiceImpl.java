@@ -136,6 +136,13 @@ public class InsightFaceServiceImpl implements FaceService {
         }
     }
 
+    public void addFeatureToRedis(FaceInfoDto faceInfoDto){
+        Map<String, Object> faceFeatureMap = new HashMap<>();
+        faceFeatureMap.put(Convert.toStr(faceInfoDto.getId()),faceInfoDto.getInsightFeature());
+        boolean status = redisUtil.hmset(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY, faceFeatureMap);
+        logger.info("人脸库特征存储redis状态：【{}】", status);
+    }
+
     private String picsToBase64(InputStream faceImageIns) throws IOException {
         BufferedImage bufferedImage;
         bufferedImage = ImageIO.read(faceImageIns);

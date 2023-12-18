@@ -12,9 +12,12 @@ import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.qwb.ai.common.entity.Attach;
 import org.qwb.ai.faceRecognition.dto.FaceCompareDto;
+import org.qwb.ai.faceRecognition.dto.FaceInfoDto;
 import org.qwb.ai.faceRecognition.entity.FaceImage;
 import org.qwb.ai.faceRecognition.entity.FaceStorage;
 import org.qwb.ai.faceRecognition.entity.Person;
+import org.qwb.ai.faceRecognition.feign.IOssEndPoint;
+import org.qwb.ai.faceRecognition.repository.FaceImageRepository;
 import org.qwb.ai.faceRecognition.repository.FaceStorageRepository;
 import org.qwb.ai.faceRecognition.repository.PersonRepository;
 import org.qwb.ai.faceRecognition.service.FaceService;
@@ -43,6 +46,10 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
     private FaceUploadOss faceUploadOss;
     @Resource
     private PersonRepository personRepository;
+    @Resource
+    private IOssEndPoint iOssEndPoint;
+    @Resource
+    private FaceImageRepository faceImageRepository;
 
     @Override
     public List<FaceStorage> isProcessed(String parentPath) {
@@ -82,7 +89,7 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
         for (File file : files) {
             Attach attach = faceUploadOss.faceUpload(file);
             if (attach == null) continue;
-            links.add(attach.getLink());
+            links.add(iOssEndPoint.fileLink(attach.getName()).getData());
             list.add(file);
             attaches.add(attach);
         }
@@ -109,8 +116,10 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
                 //对识别出来的人脸进行人脸库比对
                 for (FaceRecVO recVO : recVOS) {
                     List<FaceCompareDto> compareDtos = insightFaceService.faceRecognition(recVO.getVec(), 0.75f);
+                    //如果人脸库没有存储该人脸特征信息，则创建该人脸特征信息库
                     if (compareDtos.isEmpty()) {
-                        buildFaceFeatureFolder(file, recVO, fileAttach, outPath);
+                        FaceImage faceImage = buildFaceFeatureFolder(file, recVO, fileAttach, outPath);
+                        insightFaceService.addFeatureToRedis(new FaceInfoDto(faceImage.getId(),recVO.getVec()));
                     }
                 }
             } catch (Exception e) {
@@ -136,7 +145,7 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
         faceStorageRepository.save(faceStorage);
     }
 
-    void buildFaceFeatureFolder(File file, FaceRecVO recVO, Attach faceImageAttach, String outPath) {
+    FaceImage buildFaceFeatureFolder(File file, FaceRecVO recVO, Attach faceImageAttach, String outPath) {
         FaceImage faceImage = new FaceImage();
         String dirPath = outPath + File.pathSeparator + IdUtil.randomUUID();
         File personPath = FileUtil.isDirectory(dirPath) ? new File(dirPath) : FileUtil.mkdir(dirPath);
@@ -160,6 +169,7 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
         faceImage.setOriginalAttachName(faceImageAttach.getName());
         faceImage.setFaceAttachId(attach.getId());
         faceImage.setFaceAttachName(attach.getName());
+        return faceImageRepository.save(faceImage);
     }
 
     @Getter
