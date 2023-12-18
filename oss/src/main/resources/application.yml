@@ -4,7 +4,7 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 192.168.1.3:38848
+        server-addr: 127.0.0.1:38848
       metadata:
         preserved.heart.beat.interval: 1000 #心跳间隔。时间单位:毫秒。心跳间隔
         preserved.heart.beat.timeout: 3000 #心跳暂停。时间单位:毫秒。 即服务端6秒收不到客户端心跳，会将该客户端注册的实例设为不健康：
@@ -22,7 +22,7 @@ spring:
         one-indexed-parameters: true
 mysql:
   default:
-    url: jdbc:mysql://192.168.1.3:23305/ai_cloud_x?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&autoReconnect=true
+    url: jdbc:mysql://127.0.0.1:23305/ai_cloud_x?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&autoReconnect=true
     username: root
     password: PsOsGgN0rfXfIPbz
     driverClassName: com.mysql.cj.jdbc.Driver
@@ -31,7 +31,7 @@ mysql:
 oss:
   bucket-name: ai-cloud-001
   name: minio
-  endpoint: http://192.168.1.3:9000
+  endpoint: http://127.0.0.1:9000
   access-key: MINIO
   secret-key: RbCWAc9BRWsaHEYzCag7vFx3OWY06b7e
   enabled: true
