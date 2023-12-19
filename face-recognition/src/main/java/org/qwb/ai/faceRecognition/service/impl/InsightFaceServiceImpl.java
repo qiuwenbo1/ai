@@ -138,7 +138,7 @@ public class InsightFaceServiceImpl implements FaceService {
 
     public void addFeatureToRedis(FaceInfoDto faceInfoDto){
         Map<String, Object> faceFeatureMap = new HashMap<>();
-        faceFeatureMap.put(Convert.toStr(faceInfoDto.getId()),faceInfoDto.getInsightFeature());
+        faceFeatureMap.put(Convert.toStr(faceInfoDto.getId()),faceInfoDto);
         boolean status = redisUtil.hmset(FaceConstant.FACE_INSIGHT_FEATURE_MAP_KEY, faceFeatureMap);
         logger.info("人脸库特征存储redis状态：【{}】", status);
     }
@@ -159,7 +159,7 @@ public class InsightFaceServiceImpl implements FaceService {
     public List<List<FaceRecVO>> detectPlusByLinks(List<String> urls) {
         JSONObject requestParams = getRequestParam();
         Map<String, Object> dataMap = new HashMap<>();
-        dataMap.put("urls", List.of(urls));
+        dataMap.put("urls", urls);
         requestParams.set("images", dataMap);
         return faceInfoResultProcess(facePost(requestParams));
     }

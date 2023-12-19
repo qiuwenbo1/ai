@@ -80,7 +80,7 @@ public class FaceController {
                 FaceRecVO faceRecVO = new FaceRecVO();
                 List<Float> feature = insightFaceService.extractFaceFeature(file.getInputStream(), faceInfo);
                 if (feature != null) {
-                    List<FaceCompareDto> faceCompareDtoList = insightFaceService.faceRecognition(feature, 0.75f);
+                    List<FaceCompareDto> faceCompareDtoList = insightFaceService.faceRecognition(feature, 0.45f);
                     if (CollectionUtil.isNotEmpty(faceCompareDtoList)) {
                         Long faceId = faceCompareDtoList.get(0).getId();
                         FaceImage faceImage = faceImageRepository.findById(faceId).orElse(null);

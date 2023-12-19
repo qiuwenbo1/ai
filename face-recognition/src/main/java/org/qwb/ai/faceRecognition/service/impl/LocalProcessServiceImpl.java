@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.qwb.ai.common.entity.Attach;
+import org.qwb.ai.common.utils.StringPool;
 import org.qwb.ai.faceRecognition.dto.FaceCompareDto;
 import org.qwb.ai.faceRecognition.dto.FaceInfoDto;
 import org.qwb.ai.faceRecognition.entity.FaceImage;
@@ -63,10 +64,14 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
         return processedFiles;
     }
 
+    @Override
     public void process(String sourPath, String outPath) {
         List<File> files = FileUtil.loopFiles(sourPath);
         Map<String, List<File>> collect = files.stream().collect(Collectors.groupingBy(File::getParent));
+        int size = collect.size();
+        int index = 1;
         for (Map.Entry<String, List<File>> entry : collect.entrySet()) {
+            log.info("开始人脸检测和识别，当前进度【{}】/【{}】",index++,size);
             String key = entry.getKey();
             List<File> fileList = entry.getValue();
             List<FaceStorage> storages = isProcessed(key);
@@ -96,8 +101,8 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
         List<List<FaceRecVO>> recVOS = insightFaceService.detectPlusByLinks(links);
         for (int i = 0; i < list.size(); i++) {
             List<FaceRecVO> faceRecVOS = recVOS.get(i);
-            if (faceRecVOS.isEmpty()){
-                buildFaceStorage(list.get(i),false,attaches.get(i));
+            if (faceRecVOS.isEmpty()) {
+                buildFaceStorage(list.get(i), false, attaches.get(i));
                 continue;
             }
             result.put(list.get(i), new PersonAndFace(attaches.get(i), faceRecVOS));
@@ -106,26 +111,32 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
     }
 
 
+    /**
+     * 将文件检测出来的人脸和人脸库现有人脸进行比对
+     *
+     * @param detectMap k：文件  v：文件中的人脸信息
+     * @param outPath   如果出现新的人物，则将人物保存在本地此路径
+     */
     private void compareFace(Map<File, PersonAndFace> detectMap, String outPath) {
         for (Map.Entry<File, PersonAndFace> entry : detectMap.entrySet()) {
             File file = entry.getKey();
-            //识别到的人脸，集合为空则该照片没有人脸
+            //检测到的人脸，集合为空则该照片没有人脸
             List<FaceRecVO> recVOS = entry.getValue().getFaceRecVOS();
             Attach fileAttach = entry.getValue().getAttach();
-            try (InputStream fileInputStream = new FileInputStream(file)) {
-                //对识别出来的人脸进行人脸库比对
-                for (FaceRecVO recVO : recVOS) {
-                    List<FaceCompareDto> compareDtos = insightFaceService.faceRecognition(recVO.getVec(), 0.75f);
-                    //如果人脸库没有存储该人脸特征信息，则创建该人脸特征信息库
-                    if (compareDtos.isEmpty()) {
-                        FaceImage faceImage = buildFaceFeatureFolder(file, recVO, fileAttach, outPath);
-                        insightFaceService.addFeatureToRedis(new FaceInfoDto(faceImage.getId(),recVO.getVec()));
-                    }
-                }
-            } catch (Exception e) {
-                log.error("【{}】---【{}】", LocalProcessServiceImpl.log, e.getMessage());
+            if (recVOS.isEmpty()){
+                buildFaceStorage(file, false, fileAttach);
+                continue;
             }
-            buildFaceStorage(file,true,fileAttach);
+            //对检测出来的人脸进行人脸库比对
+            for (FaceRecVO recVO : recVOS) {
+                List<FaceCompareDto> compareDtos = insightFaceService.faceRecognition(recVO.getVec(), 0.75f);
+                //如果人脸库没有存储该人脸特征信息，则创建该人脸特征信息库
+                if (compareDtos.isEmpty()) {
+                    FaceImage faceImage = buildFaceFeatureFolder(file, recVO, fileAttach, outPath);
+                    insightFaceService.addFeatureToRedis(new FaceInfoDto(faceImage.getId(), recVO.getVec()));
+                }
+            }
+            buildFaceStorage(file, true, fileAttach);
         }
     }
 
@@ -147,14 +158,15 @@ public class LocalProcessServiceImpl implements ILocalProcessService {
 
     FaceImage buildFaceFeatureFolder(File file, FaceRecVO recVO, Attach faceImageAttach, String outPath) {
         FaceImage faceImage = new FaceImage();
-        String dirPath = outPath + File.pathSeparator + IdUtil.randomUUID();
+        String dirPath = outPath + StringPool.SLASH + IdUtil.randomUUID();
         File personPath = FileUtil.isDirectory(dirPath) ? new File(dirPath) : FileUtil.mkdir(dirPath);
-        File faceFile = new File(personPath.getPath() + File.pathSeparator + FileUtil.getPrefix(file) + IdUtil.randomUUID() + "-face." + FileUtil.getSuffix(file));
+        File faceFile = new File(personPath.getPath() + StringPool.SLASH + FileUtil.getPrefix(file) + IdUtil.randomUUID() + "-face." + FileUtil.getSuffix(file));
         ImgUtil.cut(
                 file,
                 faceFile,
                 new Rectangle(recVO.getX(), recVO.getY(), recVO.getW(), recVO.getH())
         );
+        log.info("人脸特征保存在本地路径：【{}】",faceFile.getAbsolutePath());
         Attach attach = faceUploadOss.faceUpload(faceFile);
         Person person = new Person();
         person.setName(personPath.getName());

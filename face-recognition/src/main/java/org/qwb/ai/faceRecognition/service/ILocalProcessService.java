@@ -16,8 +16,8 @@ public interface ILocalProcessService {
      */
     List<FaceStorage> isProcessed(String path);
 
-//    @Async
-//    void process(String path);
+    @Async
+    void process(String sourPath, String outPath);
 
 //    /**
 //     * 对一批文件进行人脸检测
